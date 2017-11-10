@@ -54,13 +54,10 @@
     NSInteger secondsInt = [seconds integerValue];
     @synchronized(self){
         NSInteger preAddSeconds = backgroundSecondsCounter;
-        
-        // Set to a minimum amount of time
-        if(backgroundSecondsCounter < secondsInt && secondsInt > 0)
-            backgroundSecondsCounter = secondsInt;
-        
+
         // Start if not started
-        if(preAddSeconds <= 0 && backgroundSecondsCounter > 0){
+        if(preAddSeconds <= 0 && secondsInt > 0){
+            backgroundSecondsCounter = secondsInt;
             [self performSelectorInBackground:@selector(doBackgroundTimeLoop) withObject:nil];
         }
     }
@@ -68,7 +65,11 @@
 
 - (void)setBackgroundSeconds:(CDVInvokedUrlCommand *)command
 {
-    if([command.arguments count] > 0
+    if(self.backgroundSecondsCounter > 0){
+       CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Thread already running"];
+       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
+    else if([command.arguments count] > 0
        && [[command argumentAtIndex:0] isKindOfClass:[NSNumber class]])
     {
         [self setBackgroundSecondsWithSeconds:[command argumentAtIndex:0]];
